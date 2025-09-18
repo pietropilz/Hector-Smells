@@ -1,5 +1,6 @@
 # Hector-Smells
 "Au!" -Michael Jackson
+"Oi!" - tradução livre
 
 
 
