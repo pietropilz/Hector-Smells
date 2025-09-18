@@ -19,8 +19,6 @@ Funcionalidade:
 -função decodifica o caracter e direciona pra uma das funções de mudança
 -no hector smells
 
-
-
 Nota:
 -Oitava
 -Nota
@@ -28,12 +26,12 @@ Nota:
 -pausa é nota
 
 classe Sound:
-  int volum;
+  int volume;
   int instrument;
   int octave;
-  set volum;
+  set volume;
+  set instrument;
   set octave;
-  set volum;
   
 classe Note:
   int semitone;
@@ -47,8 +45,10 @@ Funções de saída:
 
 Funções de mudança:
 -set octave;
--muda instrumento
--troca Notaufnahme
+-set instrument
+-set volume;
+-set semitone;
+-set duration;
 
 Interface gráfica:
 -Bonita
