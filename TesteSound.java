@@ -114,6 +114,12 @@ public class TesteSound {
 
         sequencer.setSequence(sequence);
         sequencer.start();
+        
+        Thread.sleep(5000);
+        sequencer.stop();
+        Thread.sleep(5000);
+        sequencer.start();
+        
         while (sequencer.isRunning()) {
             Thread.sleep(100);
         }
