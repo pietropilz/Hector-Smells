@@ -1,4 +1,5 @@
 import javax.sound.midi.*;
+import music.*;
 
 /*
  * int DO = 0;
@@ -23,6 +24,7 @@ public class TesteSound {
     }
     
     public static void main(String[] args) throws Exception {
+
         Sequencer sequencer = MidiSystem.getSequencer();
         sequencer.open();
 
@@ -34,7 +36,7 @@ public class TesteSound {
         sm.setMessage(ShortMessage.PROGRAM_CHANGE, 0, 0, 0);
         track.add(new MidiEvent(sm, 0));
         ShortMessage sml = new ShortMessage();
-        sml.setMessage(ShortMessage.PROGRAM_CHANGE, 1, 43, 0);
+        sml.setMessage(ShortMessage.PROGRAM_CHANGE, 1, 42, 0);
         track_lows.add(new MidiEvent(sml, 0));
 
         int[] melody = {
@@ -44,7 +46,7 @@ public class TesteSound {
             59,59,60,62, 62,60,59,57, 55,55,57,59, 57,55,55
         };
 
-        int[] duration = {
+        int[] durations = {
             4,4,4,4, 4,4,4,4, 4,4,4,4, 6,2,8,
             4,4,4,4, 4,4,4,4, 4,4,4,4, 6,2,8,
             4,4,4,4, 4,2,2,4,4, 4,2,2,4,4, 4,4,8,
@@ -65,6 +67,36 @@ public class TesteSound {
             16,0,0,0, 16,0,0,0, 16,0,0,0, 8,0,8,
         };
 
+        int tamanho = melody.length;
+        int instrument = 0, volume = 100;
+        int instrument_lows = 42, volume_lows = 75;
+        Note[] allNotes = new Note[tamanho];
+        Note[] notes_lows = new Note[tamanho];
+
+        for (int i = 0; i < tamanho; i++) {
+            int fullNote = melody[i];
+            int octave = fullNote / 12 - 1;
+            int semitone = fullNote % 12;
+            int duration = durations[i];
+
+            Note nota = new Note(instrument, octave, volume, semitone, duration);
+            allNotes[i] = nota;
+        }
+
+        SoundTrack soundTrack = new SoundTrack(track, 0, allNotes);
+
+        for (int i = 0; i < tamanho; i++) {
+            int fullNote = lows[i];
+            int octave = fullNote / 12 - 1;
+            int semitone = fullNote % 12;
+            int duration = duration_l[i];
+
+            Note nota = new Note(instrument_lows, octave, volume_lows, semitone, duration);
+            notes_lows[i] = nota;
+        }
+
+        SoundTrack soundTrack_lows = new SoundTrack(track_lows, 1, notes_lows);
+
         int counterTick = 24;
         int beat = 4;
 
@@ -80,12 +112,15 @@ public class TesteSound {
             counterTick += beat;
         }
 
-        int tick = counterTick, note, d, low, dl;
-        int j = 0;
+        int tick = counterTick;
+        //int note, d, low, dl;
+        if (soundTrack.createTrack(tick)) track = soundTrack.getTrack();
+        if (soundTrack_lows.createTrack(tick)) track_lows = soundTrack_lows.getTrack();
 
+        /*
         for (int i = 0; i < melody.length; i++) {
+            d = durations[i];
             note = melody[i];
-            d = duration[i];
             // Note on
             ShortMessage on = new ShortMessage();
             on.setMessage(ShortMessage.NOTE_ON, 0, note, 100);
@@ -111,18 +146,13 @@ public class TesteSound {
 
             tick += d;  // move forward
         }
+        */
 
         sequencer.setSequence(sequence);
         sequencer.start();
-        
-        Thread.sleep(5000);
-        sequencer.stop();
-        Thread.sleep(5000);
-        sequencer.start();
-        
         while (sequencer.isRunning()) {
             Thread.sleep(100);
         }
         sequencer.close();
     }
-          }
+}
