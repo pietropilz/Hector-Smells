@@ -26,7 +26,7 @@ Funcionalidade:
  Enquanto não chegar ao final do arquivo:
   Retorna o caracter atual e incrementa seu ponteiro
 
--função decodifica o caracter e direciona pra uma das funções de mudança
+-função decodifica o caracter e direciona pra uma das funções de mudança (é um switch case)(provavelmente vai chamar outras funções com switch case que então farão o direcionamento)
  Recebe o caracter atual
  Possui todas as comparações necessárias
  Direciona para funções de:
