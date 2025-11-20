@@ -58,7 +58,6 @@ public class InterfaceGrafica extends JFrame {
 
         JButton ChooseFile = CreateButtonTop("Escolher Arquivo");
         JButton SaveFile = CreateButtonTop("Salvar Arquivo");
-        JButton SaveMusic = CreateButtonTop("Salvar Música");
 
         topPanel.add(ChooseFile);
         topPanel.add(SaveFile);
@@ -181,6 +180,29 @@ public class InterfaceGrafica extends JFrame {
             }
         });
 
+        SaveFile.addActionListener(e->{
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Salvar Arquivo");
+            fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Arquivo de texto (*.txt)", "txt"));
+
+            int userSelection = fileChooser.showSaveDialog(this);
+
+            if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File fileToSave = fileChooser.getSelectedFile();
+
+            if (!fileToSave.getName().toLowerCase().endsWith(".txt")) {
+                fileToSave = new File(fileToSave.getAbsolutePath() + ".txt");
+            }
+
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileToSave))) {
+                writer.write(editText.getText());
+                JOptionPane.showMessageDialog(this, "Arquivo salvo com sucesso!");
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Erro ao salvar o arquivo: " + ex.getMessage());
+            }
+        }
+    });
+
         startPause.addActionListener(e-> {
             String text = editText.getText();
             if (text.isEmpty()){
@@ -212,6 +234,9 @@ public class InterfaceGrafica extends JFrame {
                      }
             }
         });
+
+        
+
 
         restart.addActionListener(e->{
            String text = editText.getText();
