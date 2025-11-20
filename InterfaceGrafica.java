@@ -1,95 +1,305 @@
 package music;
 
-import javax.swing.*;
 import java.awt.*;
 import java.io.*;
-import music.*; 
-
+import java.nio.file.Files;
+import javax.sound.midi.Track;
+import javax.swing.*;
 
 public class InterfaceGrafica extends JFrame {
 
-    private MusicPlayer tocar;
+    private MusicPlayer Player;
     private boolean isPlaying = false;
-    private File File;
+    private boolean isPaused = false;
+    private File file;
+    private Instrument CurrentInstrument = Instrument.PIANO;
+    private int CurrentVolume = 50;
+    private int CurrentOctave = 2;
+    private int CurrentBPM = 120;
+    JTextArea editText;
+
+    //Configuraçao de Botoes
+
+    private JButton CreateButtonTop (String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setBackground(new Color(40, 40, 40));
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setPreferredSize(new Dimension(160, 40));
+        return button;
+    }
+    private JButton CreateButton (String text){
+        JButton button = new JButton(text);
+        button.setFont (new Font("Segoe UI", Font.BOLD, 14));
+        button.setBackground (new Color (60, 60, 60));
+        button.setForeground (Color.WHITE);
+        return button;
+    }
+    private JButton StartButton (String text) {
+        JButton button = CreateButton(text);
+        button.setBackground(new Color(0, 150, 0));
+        return button;
+    }
+
 
     public InterfaceGrafica() {
         super("Mauri music");
-        getContentPane().setBackground(Color.BLACK);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(950, 650);
+        setLocationRelativeTo(null);
         setLayout(new BorderLayout());
+        getContentPane().setBackground(new Color(15, 15, 15));
 
-        JButton EscolherFile = new JButton("Escolher Arquivo");
-        JButton PlayandPause = new JButton("Start / Pause");
-        JButton restart = new JButton("Restart");
+        //Parte Superior
 
-           JButton[] botoes = {EscolherFile, PlayandPause, restart};
-        for (JButton botao : botoes) {
-            botao.setBackground(Color.DARK_GRAY);
-            botao.setForeground(Color.WHITE);     
-            botao.setFont(new Font("Arial", Font.BOLD, 14));
-            botao.setMargin(new Insets(10, 20, 10, 20)); 
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 15));
+        topPanel.setBackground(new Color(15, 15, 15));
+
+        JButton ChooseFile = CreateButtonTop("Escolher Arquivo");
+        JButton SaveFile = CreateButtonTop("Salvar Arquivo");
+        JButton SaveMusic = CreateButtonTop("Salvar Música");
+
+        topPanel.add(ChooseFile);
+        topPanel.add(SaveFile);
+
+        add(topPanel, BorderLayout.NORTH);
+
+        //Parte Central
+
+        JPanel central = new JPanel(){
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(new Color(35,35,35));
+                g2d.fillRoundRect(0,0, getWidth(), getHeight(), 30, 30);
+            }
+        };
+        central.setOpaque(false);
+        central.setLayout(new BorderLayout(20, 20));
+
+        //titulo
+
+        JLabel titulo = new JLabel("Mauri Music");
+        titulo.setFont(new Font("TimesNewRoman", Font.BOLD, 36));
+        titulo.setForeground(Color.WHITE);
+        central.add(titulo, BorderLayout.NORTH);
+
+        //area de texto de entrada
+
+        editText = new JTextArea();
+        editText.setBackground(Color.BLACK);
+        editText.setForeground(Color.WHITE);
+        editText.setCaretColor(Color.WHITE);
+        editText.setLineWrap(true);
+        editText.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        editText.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+
+        //Tratamento de scroll
+        JScrollPane scroll = new JScrollPane(editText);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.getViewport().setOpaque(false);
+        scroll.setOpaque(false);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        central.add(scroll, BorderLayout.CENTER);
+
+        //Botoes de start/pause e restart
+        JPanel buttons = new JPanel();
+            buttons.setOpaque(false);
+            buttons.setLayout(new GridBagLayout());
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10,10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridx = 0;
+
+        gbc.gridy = 0;
+        JButton startPause = StartButton("Start/Pause");
+        buttons.add(startPause, gbc);
+
+        gbc.gridy = 1;
+        JButton restart = CreateButton("Restart");
+        buttons.add(restart, gbc);
+
+        gbc.gridy = 2;
+        String[] Octaves = { "2", "3", "4", "5", "6", "7", "8", "9"};
+        JComboBox<String> octaveBox = new JComboBox<>(Octaves);
+        octaveBox.setBackground(new Color(40,40,40));
+        octaveBox.setForeground(Color.WHITE);
+        octaveBox.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        buttons.add(octaveBox, gbc);
+
+        gbc.gridy = 3;
+        String[] BPMs = { "120", "150", "180", "190", "210"};
+        JComboBox<String> BPMBox = new JComboBox<>(BPMs);
+        BPMBox.setBackground(new Color(40,40,40));
+        BPMBox.setForeground(Color.WHITE);
+        BPMBox.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        buttons.add(BPMBox, gbc);
+
+        gbc.gridy = 4;
+        JComboBox<String> instrumentBox = new JComboBox<>();
+        for (Instrument instr : Instrument.values()) {
+            instrumentBox.addItem(instr.name());
+        }
+        instrumentBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
+        buttons.add(instrumentBox, gbc);
+
+        central.add(buttons, BorderLayout.WEST);
+
+        //Volume Slider
+        JPanel VolumePanel = new JPanel();
+        VolumePanel.setOpaque (false);
+        VolumePanel.setLayout (new BoxLayout (VolumePanel, BoxLayout.Y_AXIS));
+
+        JLabel VolumeLabel = new JLabel("Volume:");
+        VolumeLabel.setForeground(Color.WHITE);
+        VolumeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JSlider volumeSlider = new JSlider(0, 100, 50);
+        volumeSlider.setBackground(new Color(35, 35, 35));
+        volumeSlider.setForeground(Color.WHITE);
+        volumeSlider.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+
+        VolumePanel.add(VolumeLabel);
+        VolumePanel.add(Box.createVerticalStrut(5));
+        VolumePanel.add(volumeSlider);
+
+        central.add(VolumePanel, BorderLayout.SOUTH);
+        
+        add(central);
+
+        //Ações dos botões
+
+        ChooseFile.addActionListener(e-> {
+            JFileChooser filechoose = new JFileChooser();
+            if (filechoose.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
+                file = filechoose.getSelectedFile();
+                LoadFile(file);
+            }
+        });
+
+        startPause.addActionListener(e-> {
+            String text = editText.getText();
+            if (text.isEmpty()){
+                JOptionPane.showMessageDialog(this, "Digite algo para tocar!");
+            }
+            if(Player != null){
+                if(isPlaying){
+                    Player.pause();
+                    isPlaying = false;
+                    isPaused = true;
+                }   
+                    else{
+                     isPlaying = true;
+                        if(isPaused){
+                            isPaused = false;
+                            Player.play();
+                        }
+                            else{
+                    
+                                new Thread(() -> {
+                                Player.stop();
+                                for (Track t : Player.getSequence().getTracks()) {
+                                Player.deleteTrack(t);
+                                }
+                                ReadText(text);
+                                Player.play();  
+                                }).start();
+                            }
+                     }
+            }
+        });
+
+        restart.addActionListener(e->{
+           String text = editText.getText();
+    if (text.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Digite algo para tocar!");
+        return;
+    }
+
+    if (Player != null) {
+        new Thread(() -> {
+            Player.stop();
+
+            for (Track t : Player.getSequence().getTracks()) {
+                Player.deleteTrack(t);
+            }
+
+            ReadText(text);
+
+            Player.play();
+
+          
+            isPlaying = true;
+            isPaused = false;
+        }).start();
+    }
+});
+
+        instrumentBox.addActionListener(e->{
+            CurrentInstrument = Instrument.valueOf(instrumentBox.getSelectedItem().toString());
+        });
+
+        volumeSlider.addChangeListener(e->{
+            CurrentVolume = volumeSlider.getValue();
+        });
+
+        octaveBox.addActionListener(e-> {
+            CurrentOctave = Integer.parseInt(octaveBox.getSelectedItem().toString());
+        });
+
+         BPMBox.addActionListener(e-> {
+            CurrentBPM = Integer.parseInt(BPMBox.getSelectedItem().toString());
+        });
+
+        setVisible(true);
         }
 
-        JPanel painelBotoes = new JPanel();
-        painelBotoes.setBackground(Color.BLACK); 
-        painelBotoes.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 20)); 
-        painelBotoes.add(EscolherFile);
-        painelBotoes.add(PlayandPause);
-        painelBotoes.add(restart);
+        //Metodos
 
-        add(painelBotoes, BorderLayout.CENTER);
+        public void setPlayer(MusicPlayer player) {
+            this.Player = player;
 
-        // Botão escolher arquivo
-        EscolherFile.addActionListener(e -> {
-            JFileChooser escolher = new JFileChooser();
-            int result = escolher.showOpenDialog(this);
-            if (result == JFileChooser.APPROVE_OPTION) {
-                File = escolher.getSelectedFile();
-                JOptionPane.showMessageDialog(this,
-                        "Arquivo selecionado: " + File.getName());
+        }
 
-                Note[] notes = {
-                        new Note(0, 4, 100, 0, 400), // dó
-                        new Note(0, 4, 100, 2, 400), // ré
-                        new Note(0, 4, 100, 4, 400)  // mi
-                };
+        private void LoadFile(File file){
+            try {
+               String content = Files.readString(file.toPath());
+               editText.setText(content); 
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Erro ao carregar o arquivo: ");
+            }
+        } 
 
-                try {
-                    tocar = new MusicPlayer();
-                    tocar.loadMusic(notes);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+        private void ReadText(String text){
+            try {
+                
+                for(Track t : Player.getSequence().getTracks()){
+                    Player.deleteTrack(t);
                 }
-            }
-        });
 
-        // Botão Play/Pause
-        PlayandPause.addActionListener(e -> {
-            if (tocar != null) {
-                if (isPlaying) { //caso botão seja clicado durante o play -> pausar
-                    tocar.pause();
-                    isPlaying = false; 
-                } else {
-                    tocar.play();
-                    isPlaying = true;
-                }
-            }
-        });
+                SoundTrack Track = Player.createTrack(CurrentInstrument, CurrentVolume, CurrentOctave, CurrentBPM);
+                Track.setController(Player.getController());
 
-        // Botão Restart
-        restart.addActionListener(e -> {
-            if (tocar != null) {
-                tocar.restart();
-                isPlaying = true;
-            }
-        });
+                FileTreatment Reader = new FileTreatment(Track);
+                Reader.readString(text);
 
-        setSize(800, 600);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setVisible(true);
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Erro ao ler o texto: ");
+            }
+        }
+        public void run() {
+            SwingUtilities.invokeLater(InterfaceGrafica::new);
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(InterfaceGrafica::new);
+      
     }
-}
+
+       
+
+
+
+       
