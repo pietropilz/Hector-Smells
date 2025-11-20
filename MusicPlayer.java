@@ -3,47 +3,60 @@ package music;
 import javax.sound.midi.*;
 
 public class MusicPlayer {
-    private Sequencer controlador;
-    private Sequence sequencia;
+    private Sequencer controller;
+    private Sequence sequence;
 
     public MusicPlayer() throws Exception {
-        controlador = MidiSystem.getSequencer();
-        controlador.open();
-        sequencia = new Sequence(sequencia.PPQ, 4);
+        controller = MidiSystem.getSequencer();
+        controller.open();
+        sequence = new Sequence(sequence.PPQ, 4);
     }
 
-    // Carrega um array de notas como trilha MIDI
-    public void loadMusic(Note[] notes) {
-        try {
-            Track track = sequencia.createTrack();
-            SoundTrack soundTrack = new SoundTrack(track, 0, notes); // canal 0
-            soundTrack.createTrack(0);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public Sequence getSequence() {
+        return this.sequence;
+    }
+    public Sequencer getController() {return this.controller;}
+
+    public SoundTrack createTrack(Instrument currentInstrument, int volumeAtual,int Currentoctave, int CurrentBPM) {
+        Track track = this.sequence.createTrack();
+        return new SoundTrack(track,currentInstrument,volumeAtual, Currentoctave, CurrentBPM);
+
+    }
+
+    public boolean deleteTrack(Track track) {
+        return this.sequence.deleteTrack(track);
     }
 
     public void play() {
         try {
-            controlador.setSequence(sequencia);
-            controlador.start();
+            controller.setSequence(sequence);
+            controller.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public void pause() {
-        if (controlador.isRunning()) {
-            controlador.stop();
+        if (controller.isRunning()) {
+            controller.stop();
         }
     }
 
+    public void stop() {
+        controller.stop();
+        controller.setTickPosition(0);
+    }
+
     public void restart() {
-        controlador.setTickPosition(0);
-        controlador.start();
+        controller.setTickPosition(SoundTrack.TIME_BEGIN);
+        controller.start();
+    }
+
+    public boolean isRunning() {
+        return this.controller.isRunning();
     }
 
     public void close() {
-        controlador.close();
+        controller.close();
     }
 }
