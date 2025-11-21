@@ -28,18 +28,30 @@ public class TrackManager {
     public int getVolume() {
         return this.volume;
     }
+
     public int getOctave() {
         return this.octave;
     }
-    public Instrument getInstrument(){return this.instrument;}
+
+    public Instrument getInstrument() {
+        return this.instrument;
+    }
+
+    public float getCurrentBPM() {
+        return currentBPM;
+    }
 
     public void setOctave(int octave) {
         this.octave = octave;
     }
+
     public void setVolume(int volume) {
         this.volume = volume;
     }
-    public void setDuration(int duration) {this.duration = duration;}
+
+    public void setDuration(int duration) {
+        this.duration = duration;
+    }
 
     public void setCurrentBPM(float currentBPM) {
         this.currentBPM = currentBPM;
@@ -71,8 +83,8 @@ public class TrackManager {
             track.add(new MidiEvent(sm, this.tick));
             this.instrument = instrument;
 
+        } catch (InvalidMidiDataException _) {
         }
-        catch (InvalidMidiDataException _) {}
     }
 
     public int getFullTone(int semitone) {
@@ -86,7 +98,7 @@ public class TrackManager {
         int duration = this.duration;
         int fullTone = getFullTone(semitone);
 
-        try{
+        try {
             ShortMessage on = new ShortMessage();
             on.setMessage(ShortMessage.NOTE_ON, this.channel, fullTone, this.volume);
             this.track.add(new MidiEvent(on, this.tick));
@@ -96,8 +108,8 @@ public class TrackManager {
             this.track.add(new MidiEvent(off, this.tick + duration));
 
             this.tick += duration;
+        } catch (InvalidMidiDataException _) {
         }
-        catch (InvalidMidiDataException _) {}
     }
 
     // MUDANÇA: Adicionado método para inserir eventos de tempo (BPM) na trilha
@@ -121,64 +133,7 @@ public class TrackManager {
             // Adiciona o evento de tempo na track, no tick ATUAL
             this.track.add(new MidiEvent(tempoMessage, this.tick));
 
-        } catch (InvalidMidiDataException _) {}
-    }
-
-    public static void handleNewNote(TrackManager sound, char character, char previousCharacter, int previousNote) {
-        if(Note.isNote(character)) {
-            int newNote = Note.charToNote(character);
-            sound.addNote(new Note(newNote, Note.DEFAULT_DURATION));
+        } catch (InvalidMidiDataException _) {
         }
-    }
-
-    public static void pause(TrackManager sound, char character, char previousCharacter, int previousNote) {
-        int temp = sound.getVolume();
-        sound.setVolume(0);
-        sound.addNote(new Note(previousNote, Note.DEFAULT_DURATION));
-        sound.setVolume(temp);
-    }
-
-    public static void doubleVolume(TrackManager sound, char character, char previousCharacter, int previousNote) {
-        int doubleVolume = sound.getVolume() * 2;
-        sound.setVolume(Math.min(doubleVolume, TrackManager.MAX_VOLUME));
-    }
-
-    public static void repeatNote(TrackManager sound, char character, char previousCharacter, int previousNote) {
-        if (Note.isNote(previousCharacter)) {
-            sound.addNote(new Note(previousNote, Note.DEFAULT_DURATION));
-        } else {
-            Instrument instrumentoAtual = sound.getInstrument();
-            sound.changeInstrument(Instrument.TELEFONE);
-            sound.addNote(new Note(Note.DO, Note.DEFAULT_DURATION));
-            sound.changeInstrument(instrumentoAtual);
-        }
-    }
-
-    public static void newInstrument(TrackManager sound, char character, char previousCharacter, int previousNote) {
-        sound.changeInstrument(Instrument.random());
-    }
-
-    public static void increaseOctave(TrackManager sound, char character, char previousCharacter, int previousNote) {
-        int newOctave = sound.getOctave() + 1;
-        sound.setOctave((newOctave > TrackManager.MAX_OCTAVE) ? TrackManager.DEFAULT_OCTAVE : newOctave);
-    }
-
-    public static void decreaseOctave(TrackManager sound, char character, char previousCharacter, int previousNote) {
-        int newOctave = sound.getOctave() - 1;
-        sound.setOctave((newOctave < TrackManager.DEFAULT_OCTAVE) ? TrackManager.MAX_OCTAVE : newOctave);
-    }
-
-    public static void randomNote(TrackManager sound, char character, char previousCharacter, int previousNote) {
-        char randomChar = (char) ('A' + (int)(Math.random() * 8));
-        sound.addNote(new Note(randomChar, Note.DEFAULT_DURATION));
-    }
-
-    public static void changeDuration(TrackManager trackManager, char character, char previousCharacter, int previousNote) {
-        trackManager.setDuration((int) character - (int) '0');
-    }
-
-    public static void increaseBPM(TrackManager trackManager, char character, char previousCharacter, int previousNote) {
-        trackManager.currentBPM += INCREASE_BPM;
-        trackManager.addTempoChange(trackManager.currentBPM);
     }
 }

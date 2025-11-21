@@ -10,9 +10,7 @@ public class TextConverter {
         void execute(TrackManager sound, char character, char previousCharacter, int previousNote);
     }
 
-    private static final Map<Character, SoundTrackAction> ACTION_MAP;
     private static final Map<String, String> REPLACER;
-
     static {
         REPLACER = new HashMap<>();
         REPLACER.put("BPM+", "辣");
@@ -20,30 +18,31 @@ public class TextConverter {
         REPLACER.put("OIT-", "好");
     }
 
+    private static final Map<Character, SoundTrackAction> ACTION_MAP;
     static {
         ACTION_MAP = new HashMap<>();
 
         // Letras que geram nova nota
         for (char c : "ABCDEFGHabcdefgh".toCharArray()) {
-            ACTION_MAP.put(c, TrackManager::handleNewNote);
+            ACTION_MAP.put(c, TextConverter::handleNewNote);
         }
 
         // Ações únicas
-        ACTION_MAP.put(' ', TrackManager::doubleVolume);
-        ACTION_MAP.put('辣', TrackManager::increaseBPM);
-        ACTION_MAP.put('你', TrackManager::increaseOctave);
-        ACTION_MAP.put('好', TrackManager::decreaseOctave);
-        ACTION_MAP.put('?', TrackManager::randomNote);
-        ACTION_MAP.put('\n', TrackManager::newInstrument);
-        ACTION_MAP.put(';', TrackManager::pause);
+        ACTION_MAP.put(' ', TextConverter::doubleVolume);
+        ACTION_MAP.put('辣', TextConverter::increaseBPM);
+        ACTION_MAP.put('你', TextConverter::increaseOctave);
+        ACTION_MAP.put('好', TextConverter::decreaseOctave);
+        ACTION_MAP.put('?', TextConverter::randomNote);
+        ACTION_MAP.put('\n', TextConverter::newInstrument);
+        ACTION_MAP.put(';', TextConverter::pause);
 
         for (char c : "12345678".toCharArray()) {
-            ACTION_MAP.put(c, TrackManager::changeDuration);
+            ACTION_MAP.put(c, TextConverter::changeDuration);
         }
 
         // Letras que repetem nota
         for (char c : "OoIiUu".toCharArray()) {
-            ACTION_MAP.put(c, TrackManager::repeatNote);
+            ACTION_MAP.put(c, TextConverter::repeatNote);
         }
     }
 
@@ -93,5 +92,62 @@ public class TextConverter {
         lastCharacter = character;
         lastpreviousCharacther = previousCharacter;
         lastpreviousNote = previousNote;
+    }
+    public static void handleNewNote(TrackManager sound, char character, char previousCharacter, int previousNote) {
+        if(Note.isNote(character)) {
+            int newNote = Note.charToNote(character);
+            sound.addNote(new Note(newNote, Note.DEFAULT_DURATION));
+        }
+    }
+
+    public static void pause(TrackManager sound, char character, char previousCharacter, int previousNote) {
+        int temp = sound.getVolume();
+        sound.setVolume(0);
+        sound.addNote(new Note(previousNote, Note.DEFAULT_DURATION));
+        sound.setVolume(temp);
+    }
+
+    public static void doubleVolume(TrackManager sound, char character, char previousCharacter, int previousNote) {
+        int doubleVolume = sound.getVolume() * 2;
+        sound.setVolume(Math.min(doubleVolume, TrackManager.MAX_VOLUME));
+    }
+
+    public static void repeatNote(TrackManager sound, char character, char previousCharacter, int previousNote) {
+        if (Note.isNote(previousCharacter)) {
+            sound.addNote(new Note(previousNote, Note.DEFAULT_DURATION));
+        } else {
+            Instrument instrumentoAtual = sound.getInstrument();
+            sound.changeInstrument(Instrument.TELEFONE);
+            sound.addNote(new Note(Note.DO, Note.DEFAULT_DURATION));
+            sound.changeInstrument(instrumentoAtual);
+        }
+    }
+
+    public static void newInstrument(TrackManager sound, char character, char previousCharacter, int previousNote) {
+        sound.changeInstrument(Instrument.random());
+    }
+
+    public static void increaseOctave(TrackManager sound, char character, char previousCharacter, int previousNote) {
+        int newOctave = sound.getOctave() + 1;
+        sound.setOctave((newOctave > TrackManager.MAX_OCTAVE) ? TrackManager.DEFAULT_OCTAVE : newOctave);
+    }
+
+    public static void decreaseOctave(TrackManager sound, char character, char previousCharacter, int previousNote) {
+        int newOctave = sound.getOctave() - 1;
+        sound.setOctave((newOctave < TrackManager.DEFAULT_OCTAVE) ? TrackManager.MAX_OCTAVE : newOctave);
+    }
+
+    public static void randomNote(TrackManager sound, char character, char previousCharacter, int previousNote) {
+        char randomChar = (char) ('A' + (int)(Math.random() * 8));
+        sound.addNote(new Note(randomChar, Note.DEFAULT_DURATION));
+    }
+
+    public static void changeDuration(TrackManager trackManager, char character, char previousCharacter, int previousNote) {
+        trackManager.setDuration((int) character - (int) '0');
+    }
+
+    public static void increaseBPM(TrackManager trackManager, char character, char previousCharacter, int previousNote) {
+        float bpm = trackManager.getCurrentBPM() + TrackManager.INCREASE_BPM;
+        trackManager.setCurrentBPM(bpm);
     }
 }

@@ -16,8 +16,10 @@ public class MusicPlayer {
         return this.sequence;
     }
 
-    public void setSequence(Sequence sequence) {this.sequence = sequence;}
-    //public Sequencer getPlayerController() {return this.playerController;}
+    public void setSequence(Sequence sequence) throws InvalidMidiDataException {
+        this.sequence = sequence;
+        playerController.setSequence(sequence);
+    }
 
     public TrackManager createTrack(Instrument currentInstrument) {
         Track track = this.sequence.createTrack();
@@ -25,8 +27,10 @@ public class MusicPlayer {
 
     }
 
-    public void deleteTrack(Track track) {
-        this.sequence.deleteTrack(track);
+    public void deleteTracks() {
+        for (Track track : sequence.getTracks()) {
+            sequence.deleteTrack(track);
+        }
     }
 
     public void play() {
@@ -51,16 +55,9 @@ public class MusicPlayer {
         return this.playerController.isRunning();
     }
 
-    /*
-    public void restart() {
+    public void restart() throws InvalidMidiDataException {
+        playerController.setSequence(sequence);
         playerController.setTickPosition(TrackManager.TIME_BEGIN);
         playerController.start();
     }
-    */
-
-    /*
-    public void close() {
-        playerController.close();
-    }
-    */
 }
