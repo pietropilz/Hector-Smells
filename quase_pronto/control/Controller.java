@@ -5,10 +5,7 @@ import view.*;
 
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiSystem;
-import javax.sound.midi.Sequence;
-import javax.sound.midi.Track;
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -16,90 +13,41 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 public class Controller {
-    private MusicPlayer player;
-    private UserInterface screen;
+    private final MusicPlayer player = new MusicPlayer();
+    private final UserInterface screen = new UserInterface(this);
     private final TextConverter reader = new TextConverter();
-    private boolean isPlaying = false;
-    private boolean midiFileLoaded = false;
+    private final FileManager fileManager = new FileManager(this);
+    private final MusicManager musicManager = new MusicManager(player, this);
 
-    public void setPlayer(MusicPlayer player) {
-        this.player = player;
-    }
+    public Controller() throws Exception {}
 
-    public void setScreen(UserInterface screen) {
-        this.screen = screen;
-    }
-
-    public Controller() {}
-
-    public void buttonStartPause() {
+    public void buttonStartPause() throws InvalidMidiDataException {
         String text = screen.getEditText().getText();
-        if (text.isEmpty()){
-            if (!midiFileLoaded) {
-                screen.showMessageDialog("Digite algo para tocar!");
-                //JOptionPane.showMessageDialog(this, "Digite algo para tocar!");
-                return;
-            }
-        }
-        else {
-            midiFileLoaded = false;
-        }
-        if(player != null){
-            if(isPlaying){
-                if (!player.isRunning()) {
-                    startMusic(text);
-                }
-                else {
-                    pauseMusic();
-                }
-            }
-            else{
-                playMusic();
-            }
-        }
+        musicManager.startPause(text);
     }
 
-    public void buttonRestart() {
+    public void buttonRestart() throws InvalidMidiDataException {
+        String text = screen.getEditText().getText();
+        musicManager.restart(text);
+    }
+
+    private void saveFile(String extension) {
         String text = screen.getEditText().getText();
         if (text.isEmpty()) {
-            if (!midiFileLoaded) {
-                screen.showMessageDialog("Digite algo para tocar!");
-                //OptionPane.showMessageDialog(this, "Digite algo para tocar!");
-                return;
-            }
-        }
-        else {
-            midiFileLoaded = false;
+            screen.showMessageDialog("Digite algo para salvar!");
+            return;
         }
 
-        if (player != null) {
-            startMusic(text);
+        JFileChooser fileChooser = fileManager.chooseFile(extension);
+        int userSelection = fileChooser.showSaveDialog(screen);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            fileManager.writeFile(fileChooser, extension, text, player.getSequence());
         }
     }
 
     public void buttonSaveFileTxt() throws IOException {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Salvar Arquivo");
-        fileChooser.setFileFilter(new FileNameExtensionFilter("Arquivo de texto (*.txt)", "txt"));
-
-        int userSelection = fileChooser.showSaveDialog(screen);
-
-        if (userSelection == JFileChooser.APPROVE_OPTION) {
-            File fileToSave = fileChooser.getSelectedFile();
-
-            if (!fileToSave.getName().toLowerCase().endsWith(".txt")) {
-                fileToSave = new File(fileToSave.getAbsolutePath() + ".txt");
-            }
-
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileToSave))) {
-                writer.write(screen.getEditText().getText());
-                screen.showMessageDialog("Arquivo salvo com sucesso!");
-                //JOptionPane.showMessageDialog(this, "Arquivo salvo com sucesso!");
-            } catch (IOException ex) {
-                screen.showMessageDialog("Erro ao salvar o arquivo: " + ex.getMessage());
-                //JOptionPane.showMessageDialog(this, "Erro ao salvar o arquivo: " + ex.getMessage());
-            }
-        }
+        saveFile("txt");
     }
 
     public void buttonChooseFileTxt() {
@@ -111,70 +59,22 @@ public class Controller {
     }
 
     public void buttonSaveFileMidi() throws IOException {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Salvar Arquivo");
-        fileChooser.setFileFilter(new FileNameExtensionFilter("Arquivo MIDI (*.mid)", "mid"));
-
-        int userSelection = fileChooser.showSaveDialog(screen);
-
-        if (userSelection == JFileChooser.APPROVE_OPTION) {
-            File fileToSave = fileChooser.getSelectedFile();
-
-            if (!fileToSave.getName().toLowerCase().endsWith(".mid")) {
-                fileToSave = new File(fileToSave.getAbsolutePath() + ".mid");
-            }
-
-            try {
-                MidiSystem.write(player.getSequence(), 1, fileToSave);
-                screen.showMessageDialog("Arquivo salvo com sucesso!");
-                //JOptionPane.showMessageDialog(this, "Arquivo salvo com sucesso!");
-            } catch (IOException ex) {
-                screen.showMessageDialog("Erro ao salvar o arquivo: " + ex.getMessage());
-                //JOptionPane.showMessageDialog(this, "Erro ao salvar o arquivo: " + ex.getMessage());
-            }
-        }
+        saveFile("mid");
     }
 
     public void buttonChooseFileMidi() throws InvalidMidiDataException, IOException {
         JFileChooser filechoose = new JFileChooser();
         if (filechoose.showOpenDialog(screen) == JFileChooser.APPROVE_OPTION){
             File file = filechoose.getSelectedFile();
-            Sequence sequence = MidiSystem.getSequence(file);
-            player.setSequence(sequence);
-            screen.getEditText().setText("");
-            midiFileLoaded = true;
-        }
-    }
 
-    private void startMusic(String text) {
-        new Thread(() -> {
-            player.stop();
-
-            for (Track t : player.getSequence().getTracks()) {
-                player.deleteTrack(t);
+            try {
+                player.setSequence(MidiSystem.getSequence(file));
             }
-
-            readText(text);
-            playMusic();
-        }).start();
-    }
-
-    private void readText(String text){
-        try {
-            Instrument currentInstrument = screen.getCurrentInstrument();
-            int currentOctave = screen.getCurrentOctave();
-            int currentVolume = screen.getCurrentVolume();
-            int currentBPM = screen.getCurrentBPM();
-
-            TrackManager tm = player.createTrack(currentInstrument);
-            tm.setOctave(currentOctave);
-            tm.setCurrentBPM(currentBPM);
-            tm.setVolume(currentVolume);
-
-            reader.readString(tm, text);
-
-        } catch (Exception e) {
-            screen.showMessageDialog("Erro ao ler o texto.");
+            catch (InvalidMidiDataException _) {
+                screen.showMessageDialog("Erro ao carregar o arquivo: " + file);
+            }
+            screen.getEditText().setText("");
+            musicManager.setMidiFileLoaded(true);
         }
     }
 
@@ -187,13 +87,21 @@ public class Controller {
         }
     }
 
-    private void playMusic() {
-        player.play();
-        isPlaying = true;
+    public TrackManager updateParameters() {
+        Instrument currentInstrument = screen.getCurrentInstrument();
+        int currentOctave = screen.getCurrentOctave();
+        int currentVolume = screen.getCurrentVolume();
+        int currentBPM = screen.getCurrentBPM();
+
+        TrackManager tm = player.createTrack(currentInstrument);
+        tm.setOctave(currentOctave);
+        tm.setCurrentBPM(currentBPM);
+        tm.setVolume(currentVolume);
+
+        return tm;
     }
 
-    private void pauseMusic() {
-        player.pause();
-        isPlaying = false;
+    public void showMessageDialog(String string) {
+        screen.showMessageDialog(string);
     }
 }
