@@ -1,7 +1,7 @@
 package view;
 
 import control.*;
-import model.*;
+import model.Instrument;
 import java.awt.*;
 import java.io.IOException;
 import javax.sound.midi.InvalidMidiDataException;
@@ -9,7 +9,6 @@ import javax.swing.*;
 
 public class UserInterface extends JFrame {
 
-    private Controller controller;
     private Instrument currentInstrument = Instrument.PIANO;
     private int currentVolume = 50;
     private int currentOctave = 2;
@@ -30,10 +29,6 @@ public class UserInterface extends JFrame {
     }
     public JTextArea getEditText() {
         return editText;
-    }
-
-    public void setController(Controller controller) {
-        this.controller = controller;
     }
 
     //Configuraçao de Botoes
@@ -61,7 +56,8 @@ public class UserInterface extends JFrame {
     }
 
 
-    public UserInterface() {
+    public UserInterface(Controller controller) {
+
         super("Mauri music");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(950, 650);
@@ -216,8 +212,20 @@ public class UserInterface extends JFrame {
             } catch (IOException _) {}
         });
 
-        startPause.addActionListener(_-> controller.buttonStartPause());
-        restart.addActionListener(_-> controller.buttonRestart());
+        startPause.addActionListener(_-> {
+            try {
+                controller.buttonStartPause();
+            } catch (InvalidMidiDataException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        restart.addActionListener(_-> {
+            try {
+                controller.buttonRestart();
+            } catch (InvalidMidiDataException e) {
+                throw new RuntimeException(e);
+            }
+        });
         instrumentBox.addActionListener(_-> currentInstrument = Instrument.valueOf(instrumentBox.getSelectedItem().toString()));
         volumeSlider.addChangeListener(_-> currentVolume = volumeSlider.getValue());
         octaveBox.addActionListener(_-> currentOctave = Integer.parseInt(octaveBox.getSelectedItem().toString()));
