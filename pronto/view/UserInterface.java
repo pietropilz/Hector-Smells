@@ -58,7 +58,7 @@ public class UserInterface extends JFrame {
 
     public UserInterface(Controller controller) {
 
-        super("Hector music");
+        super("Just music");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(950, 650);
         setLocationRelativeTo(null);
@@ -97,8 +97,8 @@ public class UserInterface extends JFrame {
 
         //titulo
 
-        JLabel titulo = new JLabel("Hector Music");
-        titulo.setFont(new Font("TimesNewRoman", Font.BOLD, 36));
+        JLabel titulo = new JLabel("Just Music", SwingConstants.CENTER);
+        titulo.setFont(new Font("Segoe UI", Font.BOLD, 45));
         titulo.setForeground(Color.WHITE);
         central.add(titulo, BorderLayout.NORTH);
 
@@ -139,28 +139,70 @@ public class UserInterface extends JFrame {
         buttons.add(restart, gbc);
 
         gbc.gridy = 2;
+
+        JPanel octavePanel = new JPanel();
+        octavePanel.setLayout(new BoxLayout(octavePanel, BoxLayout.Y_AXIS));
+        octavePanel.setOpaque(false);
+
+        JLabel octaveLabel = new JLabel("Oitava");
+        octaveLabel.setForeground(Color.WHITE);
+        octaveLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        octaveLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
+
         String[] Octaves = { "2", "3", "4", "5", "6", "7", "8", "9"};
         JComboBox<String> octaveBox = new JComboBox<>(Octaves);
         octaveBox.setBackground(new Color(40,40,40));
         octaveBox.setForeground(Color.WHITE);
         octaveBox.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        buttons.add(octaveBox, gbc);
+
+        octavePanel.add(octaveLabel);
+        octavePanel.add(octaveBox);
+        buttons.add(octavePanel, gbc);
 
         gbc.gridy = 3;
-        String[] BPMs = { "120", "150", "180", "190", "210"};
+
+        JPanel bpmPanel = new JPanel();
+        bpmPanel.setLayout(new BoxLayout(bpmPanel, BoxLayout.Y_AXIS));
+        bpmPanel.setOpaque(false);
+
+        JLabel bpmLabel = new JLabel("BPM");
+        bpmLabel.setForeground(Color.WHITE);
+        bpmLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        bpmLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
+
+        String[] BPMs = {"90", "120", "150", "180", "210", "240"};
         JComboBox<String> BPMBox = new JComboBox<>(BPMs);
         BPMBox.setBackground(new Color(40,40,40));
         BPMBox.setForeground(Color.WHITE);
         BPMBox.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        buttons.add(BPMBox, gbc);
+        bpmPanel.add(bpmLabel);
+        bpmPanel.add(BPMBox);
+        buttons.add(bpmPanel, gbc);
 
         gbc.gridy = 4;
+
+        JPanel instrumentPanel = new JPanel();
+        instrumentPanel.setLayout(new BoxLayout(instrumentPanel, BoxLayout.Y_AXIS));
+        instrumentPanel.setOpaque(false);
+
+        JLabel instrumentLabel = new JLabel("Instrumentos");
+        instrumentLabel.setForeground(Color.WHITE);
+        instrumentLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        instrumentLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
+
         JComboBox<String> instrumentBox = new JComboBox<>();
         for (Instrument instr : Instrument.values()) {
             instrumentBox.addItem(instr.name());
         }
         instrumentBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
-        buttons.add(instrumentBox, gbc);
+        instrumentPanel.add(instrumentLabel);
+        instrumentPanel.add(instrumentBox);
+
+        buttons.add(instrumentPanel, gbc);
+
+        gbc.gridy = 5;
+        JButton documentation = createButton("Documentação");
+        buttons.add(documentation, gbc);
 
         central.add(buttons, BorderLayout.WEST);
 
@@ -170,13 +212,19 @@ public class UserInterface extends JFrame {
         VolumePanel.setLayout (new BoxLayout (VolumePanel, BoxLayout.Y_AXIS));
 
         JLabel VolumeLabel = new JLabel("Volume:");
+        VolumeLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
         VolumeLabel.setForeground(Color.WHITE);
-        VolumeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        VolumeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JSlider volumeSlider = new JSlider(0, 100, 50);
         volumeSlider.setBackground(new Color(35, 35, 35));
         volumeSlider.setForeground(Color.WHITE);
-        volumeSlider.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+        volumeSlider.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+
+        volumeSlider.setMajorTickSpacing(25);
+        volumeSlider.setMinorTickSpacing(5);
+        volumeSlider.setPaintTicks(true);
+        volumeSlider.setPaintLabels(true);
 
         VolumePanel.add(VolumeLabel);
         VolumePanel.add(Box.createVerticalStrut(5));
@@ -216,6 +264,37 @@ public class UserInterface extends JFrame {
                 throw new RuntimeException(e);
             }
         });
+
+        documentation.addActionListener(_ -> {
+            try {
+                // Caminho do arquivo .txt (coloque o caminho real)
+                StringBuilder sb = controller.buttonDocumentation();
+
+                // Exibir no painel com scroll
+                JTextArea area = new JTextArea(sb.toString());
+                area.setEditable(false);
+                area.setFont(new Font("Monospaced", Font.PLAIN, 14));
+
+                JScrollPane scroll2 = new JScrollPane(area);
+                scroll2.setPreferredSize(new Dimension(500, 400));
+
+                JOptionPane.showMessageDialog(
+                        null,
+                        scroll2,
+                        "Documentação do Trabalho",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Erro ao ler o arquivo de documentação.",
+                        "Erro",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        });
+
         instrumentBox.addActionListener(_-> currentInstrument = Instrument.valueOf(instrumentBox.getSelectedItem().toString()));
         volumeSlider.addChangeListener(_-> currentVolume = volumeSlider.getValue());
         octaveBox.addActionListener(_-> currentOctave = Integer.parseInt(octaveBox.getSelectedItem().toString()));
@@ -223,7 +302,6 @@ public class UserInterface extends JFrame {
 
         setVisible(true);
     }
-
     public void showMessageDialog(String string) {
         JOptionPane.showMessageDialog(this, string);
     }
