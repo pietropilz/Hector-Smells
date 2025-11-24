@@ -5,7 +5,9 @@ import view.*;
 
 import javax.sound.midi.InvalidMidiDataException;
 import javax.swing.*;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 
@@ -59,6 +61,10 @@ public class Controller {
 
     public void buttonSaveFileMidi() throws IOException {
         saveFile("mid");
+    }
+
+    public StringBuilder buttonDocumentation() throws IOException {
+        return fileManager.buttonDocumentation();
     }
 
     private void loadFile(File file){
