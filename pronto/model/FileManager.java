@@ -6,12 +6,9 @@ import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Sequence;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.io.File;
 
 public class FileManager {
     private final Controller controller;
@@ -62,5 +59,21 @@ public class FileManager {
             }
         }
 
+    }
+
+    public StringBuilder buttonDocumentation() throws IOException {
+        File file = new File("src\\documentacao.txt");
+
+        // Leitura do arquivo
+        StringBuilder sb = new StringBuilder();
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String linha;
+
+        while ((linha = br.readLine()) != null) {
+            sb.append(linha).append("\n");
+        }
+        br.close();
+
+        return sb;
     }
 }
